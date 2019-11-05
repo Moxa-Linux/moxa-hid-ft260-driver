@@ -1,20 +1,15 @@
-TARGET	:= hid-ft260
-KVER	:= $(shell uname -r)
-KDIR	:= /lib/modules/$(KVER)/build
-PWD	:= $(shell pwd)
-
+TARGET := hid-ft260
+KRELEASE ?= $(shell uname -r)
+KBUILD ?= /lib/modules/$(KRELEASE)/build
 obj-m += hid-ft260.o
 
-all: modules
-
 modules:
-	@echo "Making modules $(TARGET).ko ..."
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+	@echo "Making modules $(TARGET) ..."
+	$(MAKE) -C $(KBUILD) M=$(PWD) modules
 
-install: all
-	mkdir -v -p "$(DESTDIR)/lib/modules/$(KVER)/kernel/drivers/hid"
-	install $(TARGET).ko $(DESTDIR)/lib/modules/$(KVER)/kernel/drivers/hid/
+install: modules
+	/usr/bin/install -m 644 -D $(TARGET).ko /lib/modules/$(KRELEASE)/kernel/drivers/hid/$(TARGET).ko
+	/usr/bin/install -m 644 -D $(TARGET).conf /usr/lib/modules-load.d/$(TARGET).conf
 
 clean:
-	$(MAKE) -C $(KDIR) M=$(PWD) clean
-
+	$(MAKE) -C $(KBUILD) M=$(PWD) clean
