@@ -32,6 +32,8 @@
 #include <linux/usb/ch9.h>
 
 #define FT260_REPORT_MAX_LENGTH			64
+/* clk speed range 60k~800kbps */
+#define FT260_REPORT_MAX_SPEED			400
 
 /* ID for FTDI:FT260 */
 #define USB_VENDOR_ID_FTDI			0x0403
@@ -78,20 +80,19 @@ enum {
 };
 
 struct ft260_write_req_report {
-	u8 report;				/* FT260_IO_I2C_RW_REPORT_BASE + (len - 1) / 4 */
-	u8 slave_address;			/* 7-bit slave address */
-	u8 flag;				/* FT260_I2C_WRITE_FLAG */
+	u8 report;		/* FT260_IO_I2C_RW_REPORT_BASE + (len - 1) / 4 */
+	u8 slave_address;	/* 7-bit slave address */
+	u8 flag;		/* FT260_I2C_WRITE_FLAG */
 	u8 length;
 	u8 data[61];
 } __packed;
 
 struct ft260_read_req_report {
-	u8 report;				/* FT260_O_I2C_READ_REQUEST */
+	u8 report;		/* FT260_O_I2C_READ_REQUEST */
 	u8 slave_address;
 	u8 flag;
 	__le16 length;
 } __packed;
-
 
 /* Number of times to request transfer status before giving up waiting for a
    transfer to complete. This may need to be changed if SMBUS clock, retries,
@@ -518,62 +519,17 @@ static const struct i2c_algorithm ft260_i2c_algorithm = {
 	.functionality	= ft260_functionality,
 };
 
-/*
-static int cp2112_get_usb_config(struct hid_device *hdev,
-				 struct cp2112_usb_config_report *cfg)
-{
-	int ret;
-
-	ret = ft260_hid_get(hdev, CP2112_USB_CONFIG, (u8 *)cfg, sizeof(*cfg),
-			     HID_FEATURE_REPORT);
-	if (ret != sizeof(*cfg)) {
-		hid_err(hdev, "error reading usb config: %d\n", ret);
-		if (ret < 0)
-			return ret;
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int cp2112_set_usb_config(struct hid_device *hdev,
-				 struct cp2112_usb_config_report *cfg)
-{
-	int ret;
-
-	BUG_ON(cfg->report != CP2112_USB_CONFIG);
-
-	ret = cp2112_hid_output(hdev, (u8 *)cfg, sizeof(*cfg),
-				HID_FEATURE_REPORT);
-	if (ret != sizeof(*cfg)) {
-		hid_err(hdev, "error writing usb config: %d\n", ret);
-		if (ret < 0)
-			return ret;
-		return -EIO;
-	}
-
-	return 0;
-}
-*/
-
-
 static int ft260_probe(struct hid_device *hdev, const struct hid_device_id *id)
 {
 	struct ft260_device *dev;
 	u8 buf[13];
+	u8 config_buf[4];
 	int ret;
-/*	struct cp2112_smbus_config_report config; */
 
 	dev = devm_kzalloc(&hdev->dev, sizeof(*dev), GFP_KERNEL);
 	if (!dev)
 		return -ENOMEM;
 
-/*
-	dev->in_out_buffer = devm_kzalloc(&hdev->dev, FT260_REPORT_MAX_LENGTH,
-					  GFP_KERNEL);
-	if (!dev->in_out_buffer)
-		return -ENOMEM;
-*/
 	mutex_init(&dev->lock);
 
 	ret = hid_parse(hdev);
@@ -610,7 +566,25 @@ static int ft260_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	}
 
 	hid_info(hdev, "Part Number: 0x%02X%02X Device Version: 0x%02X%02X\n",
-		 buf[1], buf[2], buf[3], buf[4]);	/* Wesley: Todo, check the endian ?? */
+		buf[1], buf[2], buf[3], buf[4]);	/* Wesley: Todo, check the endian ?? */
+
+	/* Set Feature */
+	config_buf[0] = 0xA1;
+	/* request I2C Clock Speed */
+	config_buf[1] = 0x22;
+	/* Set I2C clock speed, whose range is from 60K bps to 3400K bps. */
+	config_buf[2] = FT260_REPORT_MAX_SPEED & 0x00ff; /* MSB */
+	config_buf[3] = FT260_REPORT_MAX_SPEED >> 8; /* LSB */
+
+	ret = ft260_hid_output(hdev, config_buf, sizeof(config_buf), HID_FEATURE_REPORT);
+	if (ret != sizeof(config_buf)) {
+		hid_err(hdev, "error setting SMBus config\n");
+		if (ret >= 0)
+			ret = -EIO;
+		goto err_power_normal;
+	}
+	hid_info(hdev, "set FTDI FT260 feature as 0x%02X%02X%02X%02X\n",
+		config_buf[0], config_buf[1], config_buf[2], config_buf[3]);
 
 	hid_set_drvdata(hdev, (void *)dev);
 	dev->hdev		= hdev;
@@ -636,7 +610,7 @@ static int ft260_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	hid_dbg(hdev, "adapter registered\n");
 	hid_hw_power(hdev, PM_HINT_NORMAL);
 
-	printk(KERN_INFO "ft260 driver was probed\n");
+	hid_info(hdev, "FT260 driver was probed\n");
 	return ret;
 
 err_power_normal:
@@ -652,12 +626,6 @@ static void ft260_remove(struct hid_device *hdev)
 {
 	struct ft260_device *dev = hid_get_drvdata(hdev);
 	i2c_del_adapter(&dev->adap);
-	/* i2c_del_adapter has finished removing all i2c devices from our
-	 * adapter. Well behaved devices should no longer call our ft260_xfer
-	 * and should have waited for any pending calls to finish. It has also
-	 * waited for device_unregister(&adap->dev) to complete. Therefore we
-	 * can safely free our struct cp2112_device.
-	 */
 	hid_hw_close(hdev);
 	hid_hw_stop(hdev);
 }
@@ -709,4 +677,3 @@ module_hid_driver(ft260_driver);
 MODULE_DESCRIPTION("FTDI FT260 HID USB to I2C master bridge");
 MODULE_AUTHOR("Wesley Wu <wesleysy.wu@moxa.com>");
 MODULE_LICENSE("GPL");
-
