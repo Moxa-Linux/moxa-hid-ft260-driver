@@ -11,10 +11,10 @@ mil-internal-release_build:
     stage: mil-internal-release_build
     script:
         - dpkg --add-architecture amd64
-        - echo "deb http://mil-internal-apt:8080/mirror-debian_20190909/ stretch main contrib non-free" > /etc/apt/sources.list
+        - echo "deb http://mil-internal-apt:8080/mirror-debian_20200211 stretch main" > /etc/apt/sources.list
         - curl -fsSL http://mil-internal-apt:8080/mil_internal_apt.gpg | apt-key add -
         - apt-get update
-        - apt-get install --allow-unauthenticated -y build-essential:amd64 devscripts linux-headers-4.9.0-11-amd64
+        - apt-get install --allow-unauthenticated -y build-essential:amd64 devscripts linux-headers-4.9.0-12-amd64
         - dpkg-buildpackage -us -uc -b -aamd64
         - mv ../*.deb .
         - mv ../*.buildinfo .
