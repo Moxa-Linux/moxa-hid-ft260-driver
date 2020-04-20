@@ -1,2 +1,2 @@
-hid-ft260.ko /lib/modules/4.9.0-11-amd64/kernel/drivers/hid/
+hid-ft260.ko /lib/modules/4.9.0-12-amd64/kernel/drivers/hid/
 hid-ft260.conf /usr/lib/modules-load.d

@@ -1,3 +1,9 @@
+moxa-hid-ft260-driver (1.1.0) stretch; urgency=low
+
+  * update dependence to Debian 9.12
+
+ -- Elvis Yao (姚家瑋) <ElvisCW.Yao@moxa.com>  Fri, 17 Apr 2020 18:32:26 +0800
+
 moxa-hid-ft260-driver (1.0.0) stretch; urgency=low
 
   * Initial release
