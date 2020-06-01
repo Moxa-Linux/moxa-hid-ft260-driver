@@ -30,6 +30,11 @@
 #include <linux/module.h>
 #include <linux/nls.h>
 #include <linux/usb/ch9.h>
+#include <linux/version.h>
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
+#include <linux/hidraw.h>
+#endif
 
 #define FT260_REPORT_MAX_LENGTH			64
 /* clk speed range 60k~800kbps */
@@ -593,8 +598,15 @@ static int ft260_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	dev->adap.algo		= &ft260_i2c_algorithm;
 	dev->adap.algo_data	= dev;
 	dev->adap.dev.parent	= &hdev->dev;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
+	snprintf(dev->adap.name, sizeof(dev->adap.name),
+		 "FT260 I2C Bridge on hiddev%d", ((struct hidraw *)hdev->hidraw)->minor);
+#else
 	snprintf(dev->adap.name, sizeof(dev->adap.name),
 		 "FT260 I2C Bridge on hiddev%d", hdev->minor);
+#endif
+
 	dev->hwversion = buf[2];		/* Wesley: What should we set for this ?? */
 	init_waitqueue_head(&dev->wait);
 
