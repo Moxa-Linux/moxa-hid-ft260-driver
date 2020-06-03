@@ -436,20 +436,10 @@ static int ft260_xfer(struct i2c_adapter *adap, u16 addr,
 	case I2C_SMBUS_BYTE_DATA:
 		if (I2C_SMBUS_READ == read_write) {
 			read_length = 2;
-			/* select channel */
-			count = ft260_write_req(buf, addr, command, 0, 0);
-			ret = ft260_hid_output(hdev, buf, count, HID_OUTPUT_REPORT);
-			if (ret < 0) {
-				hid_warn(hdev, "Error starting transaction: %d\n", ret);
-				goto power_normal;
-			}
-
 			count = ft260_read_req(buf, addr, read_length);
 		} else {
 			read_length = 1;
 			count = ft260_write_req(buf, addr, command, &data->byte, read_length);
-			if (count < 0)
-				return count;
 		}
 		break;
 	case I2C_SMBUS_WORD_DATA:
@@ -498,7 +488,7 @@ static int ft260_xfer(struct i2c_adapter *adap, u16 addr,
 		switch (size) {
 		case I2C_SMBUS_BYTE:
 		case I2C_SMBUS_BYTE_DATA:
-			data->byte = buf[0];
+			data->byte = buf[1];
 			break;
 		case I2C_SMBUS_WORD_DATA:
 			data->word = le16_to_cpup((__le16 *)buf);
