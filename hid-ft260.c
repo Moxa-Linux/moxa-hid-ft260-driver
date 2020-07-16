@@ -30,6 +30,11 @@
 #include <linux/module.h>
 #include <linux/nls.h>
 #include <linux/usb/ch9.h>
+#include <linux/version.h>
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
+#include <linux/hidraw.h>
+#endif
 
 #define FT260_REPORT_MAX_LENGTH			64
 /* clk speed range 60k~800kbps */
@@ -431,20 +436,10 @@ static int ft260_xfer(struct i2c_adapter *adap, u16 addr,
 	case I2C_SMBUS_BYTE_DATA:
 		if (I2C_SMBUS_READ == read_write) {
 			read_length = 2;
-			/* select channel */
-			count = ft260_write_req(buf, addr, command, 0, 0);
-			ret = ft260_hid_output(hdev, buf, count, HID_OUTPUT_REPORT);
-			if (ret < 0) {
-				hid_warn(hdev, "Error starting transaction: %d\n", ret);
-				goto power_normal;
-			}
-
 			count = ft260_read_req(buf, addr, read_length);
 		} else {
 			read_length = 1;
 			count = ft260_write_req(buf, addr, command, &data->byte, read_length);
-			if (count < 0)
-				return count;
 		}
 		break;
 	case I2C_SMBUS_WORD_DATA:
@@ -493,7 +488,7 @@ static int ft260_xfer(struct i2c_adapter *adap, u16 addr,
 		switch (size) {
 		case I2C_SMBUS_BYTE:
 		case I2C_SMBUS_BYTE_DATA:
-			data->byte = buf[0];
+			data->byte = buf[1];
 			break;
 		case I2C_SMBUS_WORD_DATA:
 			data->word = le16_to_cpup((__le16 *)buf);
@@ -593,8 +588,15 @@ static int ft260_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	dev->adap.algo		= &ft260_i2c_algorithm;
 	dev->adap.algo_data	= dev;
 	dev->adap.dev.parent	= &hdev->dev;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
+	snprintf(dev->adap.name, sizeof(dev->adap.name),
+		 "FT260 I2C Bridge on hiddev%d", ((struct hidraw *)hdev->hidraw)->minor);
+#else
 	snprintf(dev->adap.name, sizeof(dev->adap.name),
 		 "FT260 I2C Bridge on hiddev%d", hdev->minor);
+#endif
+
 	dev->hwversion = buf[2];		/* Wesley: What should we set for this ?? */
 	init_waitqueue_head(&dev->wait);
 
