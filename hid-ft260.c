@@ -32,6 +32,7 @@
 #include <linux/usb/ch9.h>
 #include <linux/version.h>
 
+#define DRVVERSION "1.1.0"
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
 #include <linux/hidraw.h>
 #endif
@@ -560,6 +561,7 @@ static int ft260_probe(struct hid_device *hdev, const struct hid_device_id *id)
 		goto err_power_normal;
 	}
 
+	hid_info(hdev, "Driver version %s\n", DRVVERSION);
 	hid_info(hdev, "Part Number: 0x%02X%02X Device Version: 0x%02X%02X\n",
 		buf[1], buf[2], buf[3], buf[4]);	/* Wesley: Todo, check the endian ?? */
 
@@ -679,3 +681,4 @@ module_hid_driver(ft260_driver);
 MODULE_DESCRIPTION("FTDI FT260 HID USB to I2C master bridge");
 MODULE_AUTHOR("Wesley Wu <wesleysy.wu@moxa.com>");
 MODULE_LICENSE("GPL");
+MODULE_VERSION(DRVVERSION);
