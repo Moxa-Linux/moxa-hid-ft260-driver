@@ -4,11 +4,11 @@ Priority: optional
 Maintainer: Elvis Yao <ElvisCW.Yao@moxa.com>
 Standards-Version: 4.1.3
 Build-Depends: debhelper (>= 10),
-               linux-headers-4.9.0-12-amd64
+               linux-headers-4.9.0-13-amd64
 Homepage: https://www.moxa.com/
 
 Package: moxa-hid-ft260-driver-amd64
 Architecture: amd64
 Depends: ${misc:Depends},
-         linux-image-4.9.0-12-amd64
+         linux-image-4.9.0-13-amd64
 Description: The purpose of this driver is USB to SMBUS bridge ft260.

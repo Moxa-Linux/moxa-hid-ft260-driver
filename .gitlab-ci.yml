@@ -10,21 +10,21 @@ mil-internal-release_build:
         - Runner-Stretch
     stage: mil-internal-release_build
     script:
-        - dpkg --add-architecture amd64
-        - echo "deb http://mil-internal-apt:8080/mirror-debian_20200211 stretch main" > /etc/apt/sources.list
+        - echo "deb http://mil-internal-apt:8080/mirror-debian_20200718/debian stretch main" > /etc/apt/sources.list
         - curl -fsSL http://mil-internal-apt:8080/mil_internal_apt.gpg | apt-key add -
         - apt-get update
-        - apt-get install --allow-unauthenticated -y build-essential:amd64 devscripts linux-headers-4.9.0-12-amd64
-        - dpkg-buildpackage -us -uc -b -aamd64
-        - mv ../*.deb .
+        - apt-get install -y -qq --no-install-recommends build-essential devscripts
+        - apt-get build-dep ./ -y
+        - dpkg-buildpackage -us -uc -b
         - mv ../*.buildinfo .
         - mv ../*.changes .
+        - mv ../*.deb .
     artifacts:
         name: "${CI_PROJECT_NAME}"
         paths:
-        - ./*.deb
         - ./*.buildinfo
         - ./*.changes
+        - ./*.deb
 
 prepare_mil-internal-release_debs:
     tags:
