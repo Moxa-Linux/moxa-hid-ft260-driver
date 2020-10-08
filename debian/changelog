@@ -1,3 +1,9 @@
+moxa-hid-ft260-driver (1.2.0+deb9) stretch; urgency=low
+
+  * feat: update depends on linux kernel 4.9.0-13-amd64 
+
+ -- Elvis Yao (姚家瑋) <ElvisCW.Yao@moxa.com>  Thu, 08 Oct 2020 14:59:42 +0800
+
 moxa-hid-ft260-driver (1.1.0) stretch; urgency=low
 
   * update dependence to Debian 9.12
