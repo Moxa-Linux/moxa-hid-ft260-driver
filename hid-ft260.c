@@ -765,6 +765,7 @@ static int ft260_is_interface_enabled(struct hid_device *hdev)
 			hid_info(hdev, "i2c is unsupported on interface 1\n");
 			ret = 0;
 		}
+		ret = 1;
 		break;
 	}
 	return ret;
