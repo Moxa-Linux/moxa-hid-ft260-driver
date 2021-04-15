@@ -5,11 +5,11 @@ obj-m += hid-ft260.o
 
 modules:
 	@echo "Making modules $(TARGET) ..."
-	$(MAKE) -C $(KBUILD) M=$(PWD) modules
+	$(MAKE) -C $(KBUILD) M=$(shell pwd) modules
 
 install: modules
 	/usr/bin/install -m 644 -D $(TARGET).ko /lib/modules/$(KRELEASE)/kernel/drivers/hid/$(TARGET).ko
 	/usr/bin/install -m 644 -D $(TARGET).conf /usr/lib/modules-load.d/$(TARGET).conf
 
 clean:
-	$(MAKE) -C $(KBUILD) M=$(PWD) clean
+	$(MAKE) -C $(KBUILD) M=$(shell pwd) clean
